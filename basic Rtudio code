@@ -1,0 +1,71 @@
+
+# rename # html table make # clean table #  
+
+
+library(tidyverse)  
+library(rvest)  
+library(janitor)
+library(dplyr)
+library(ggplot2)
+
+content <- read_html("https://en.wikipedia.org/wiki/List_of_highest-grossing_films_in_the_United_States_and_Canada")
+tables <- content %>% html_table(fill = TRUE)
+
+first_table <- tables[[1]]
+
+
+first_table <- first_table[-1,]
+
+
+
+
+colnames(first_table) <- make.unique(colnames(first_table))
+first_table <- first_table %>% rename(Movie_Name = Rank)
+
+
+
+first_table <- first_table %>% clean_names()
+names(first_table)
+
+
+first_table <- first_table %>% 
+  mutate(lifetime_gross = parse_number(lifetime_gross))
+
+first_table <- first_table %>% arrange(desc(lifetime_gross))
+
+first_ta <- first_table %>% head(20)
+
+
+first_ta %>% ggplot(aes(x = title, y = lifetime_gross)) +
+  geom_bar(stat = "identity", fill = "skyblue", color = "black") +
+  labs(
+    title = "Lifetime Gross Earnings of Movies",
+    x = "Movie Title",
+    y = "Lifetime Gross ($)"
+  )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
