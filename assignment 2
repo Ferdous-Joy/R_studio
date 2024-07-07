@@ -1,0 +1,122 @@
+library(tidyverse)  
+library(rvest)  
+library(janitor)
+library(dplyr)
+library(ggplot2)
+library(stringr)
+
+content <- read_html("https://en.wikipedia.org/wiki/Bundestag")
+tables <- content %>% html_table(fill = TRUE, header = FALSE)
+
+#first_table <- tables[[1]]
+#second_table <- tables[[2]]
+# Read the CSV file into a dataframe
+# dfrgtyhjukldata <- read.csv("C:\\Users\\user\\Desktop\\data_final_2\\DE_Bundestag.csv")
+
+
+
+first_table <- first_table[-1,]
+
+seat_DE <- tables[[3]]
+seat_DE <- seat_DE[-1,]
+seat_DE <- seat_DE[-54,]
+seat_DE <- seat_DE[-49,]
+
+seat_DE <- seat_DE %>% select(-X1)
+
+seat_DE <- seat_DE %>%  rename(party_name = X2)
+seat_DE <- seat_DE %>%  rename(votes = X3, percentages= X4)
+seat_DE <- seat_DE %>%  rename(seat = X5, votes_in_party= X6,prcnt_in_party= X7,seat_in_party= X8, total= X9)
+ 
+names(seat_DE)
+seat_DE <- seat_DE %>% select(party_name, votes, percentages, seat, votes_in_party,prcnt_in_party, seat_in_party, total)
+
+colnames(seat_DE) <- make.unique(colnames(seat_DE))
+
+seat_DE$party_name <- gsub("\\[.*?\\]", "",  seat_DE$party_name)
+seat_DE<- seat_DE%>%
+  mutate(across(everything(), ~ na_if(., "–")))
+
+# Saving the dataset as a CSV file
+write.csv(seat_DE, "DE_Bundestag.csv", row.names = FALSE)
+
+
+Final_data <- seat_DE
+
+
+
+
+  head(seat_DE, 5)
+
+
+print(seat_DE)
+
+
+
+leaned_seat_DE <- seat_DE %>%
+  mutate(across(where(is.character), ~str_replace_all(., ",", ""))) %>%
+  mutate(across(c(votes, percentages, seat, votes_in_party, prcnt_in_party, seat_in_party, total), as.numeric))
+
+
+
+top_10_parties <- leaned_seat_DE %>%
+  arrange(desc(votes)) %>%
+  slice_head(n = 10)
+
+
+top_10_seat <- leaned_seat_DE %>%
+  arrange(desc(seat)) %>%
+  slice_head(n = 5)
+
+
+
+# Bar chart for seats won by each party
+ggplot(top_10_parties, aes(x = reorder(party_name, -seat), y = seat)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  labs(title = "Number of Seats Won by Each Party",
+       x = "Party Name",
+       y = "Number of Seats") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+# Scatter plot to compare votes and percentage of votes within each party
+ggplot(top_10_parties, aes(x = votes, y = percentages)) +
+  geom_point(aes(color = party_name), size = 3) +
+  labs(title = "Votes vs. Percentage of Votes Within Each Party",
+       x = "Number of Votes",
+       y = "Percentage of Votes") +
+  theme_minimal() +
+  scale_color_discrete(name = "Party Name")
+
+
+ggplot(top_10_parties, aes(x = party_name, y = votes)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  labs(title = "Number of Votes got by Each Party",
+       x = "Party Name",
+       y = "Number of Votes") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+  
+
+top_10_seat$party_name <- gsub("\\[.*?\\]", "", top_10_seat$party_name)
+
+
+library(ggplot2)
+
+ggplot(top_10_seat, aes(x = party_name, y = seat)) +
+  geom_bar(stat = "identity", fill = "blue", color = "black") +
+  labs(title = "Bar Plot of Top 10 Seats", x = "Party Name", y = "Seats") +
+  theme_minimal()
+
+
+
+
+
+
+
+
+
+
+
